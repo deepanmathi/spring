@@ -1,0 +1,70 @@
+package com.noXML;
+
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
+
+@Configuration
+@ComponentScan("com.noXML")
+@PropertySources({
+	  @PropertySource("classpath:sports.properties"),
+	  @PropertySource("classpath:mylogger.properties")
+})
+public class sportsConfig {
+	@Value("${root.logger.level}")
+	private String rootLoggerLevel;
+ 
+	@Value("${printed.logger.level}")
+	private String printedLoggerLevel;
+	
+	
+	@PostConstruct
+	public void initLogger() {
+ 
+		// parse levels
+		Level rootLevel = Level.parse(rootLoggerLevel);
+		Level printedLevel = Level.parse(printedLoggerLevel);
+		
+		// get logger for app context
+		Logger applicationContextLogger = Logger.getLogger(AnnotationConfigApplicationContext.class.getName());
+ 
+		// get parent logger
+		Logger loggerParent = applicationContextLogger.getParent();
+ 
+		// set root logging level
+		loggerParent.setLevel(rootLevel);
+		
+		// set up console handler
+		ConsoleHandler consoleHandler = new ConsoleHandler();
+		consoleHandler.setLevel(printedLevel);
+		consoleHandler.setFormatter(new SimpleFormatter());
+		
+		// add handler to the logger
+		loggerParent.addHandler(consoleHandler);
+	}
+	
+	//@Bean is for default singleton scope
+	@Bean
+	public FortuneService sadFort()
+	{
+		return new SadFortune();
+	}
+	
+	//swimCo is bean id
+	@Bean
+	public Coach swimCo()
+	{
+		return new SwimCoach(sadFort());
+	}
+}
